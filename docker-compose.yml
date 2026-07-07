@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: retrohub-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - roms_data:/app/roms
+      - db_data:/app/data
+    environment:
+      - PORT=3000
+      - ROMS_DIR=/app/roms
+      - DATA_DIR=/app/data
+      - NODE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: retrohub-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - API_URL=http://backend:3000
+    restart: unless-stopped
+
+volumes:
+  roms_data:
+    name: retrohub_roms
+  db_data:
+    name: retrohub_db
